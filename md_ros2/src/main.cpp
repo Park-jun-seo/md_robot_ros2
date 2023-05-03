@@ -51,7 +51,6 @@ void PubRobotRPM(const md_msgs::msg::RPM &msg, rclcpp::Node::SharedPtr node)
 {
     rclcpp::QoS qos_profile = rclcpp::QoS(rclcpp::KeepLast(10));
     std::string topic_name = "/heroehs/labor/whl/"+robotParamData.fb_state+"/rpm";
-
     auto robot_rpm_pub = node->create_publisher<md_msgs::msg::RPM>(topic_name, qos_profile);
     robot_rpm_pub->publish(msg);
     return;
@@ -170,7 +169,8 @@ int main(int argc, char *argv[])
             BrakeCallback(msg, node);
         });
 
-    // auto robot_pose_pub = node->create_publisher<md_msgs::msg::Pose>("robot_pose", qos_profile);
+    std::string rpm_topic_name = "/heroehs/labor/whl/"+robotParamData.fb_state+"/rpm";
+    auto robot_rpm_pub = node->create_publisher<md_msgs::msg::RPM>(rpm_topic_name, qos_profile);
     /**********************************************************************************************************/
 
     rclcpp::WallRate r(std::chrono::milliseconds(1));
