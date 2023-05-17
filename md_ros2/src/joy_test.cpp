@@ -2,6 +2,9 @@
 #include "sensor_msgs/msg/joy.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 
+double v = 1.8;
+double rad = 0.3;
+
 class JoyToTwist : public rclcpp::Node
 {
 public:
@@ -24,17 +27,17 @@ private:
     // update linear x based on trigger button
     if (msg->axes[2] == 1)
     {
-      float trigger_value = map(msg->axes[5], 1.0, -1.0, 0.0, 0.5);
+      float trigger_value = map(msg->axes[5], 1.0, -1.0, 0.0, v);
       twist_.linear.x = trigger_value;
     }
     else if (msg->axes[5] == 1)
     {
-      float trigger_value = map(msg->axes[2], 1.0, -1.0, 0.0, -0.5);
+      float trigger_value = map(msg->axes[2], 1.0, -1.0, 0.0, -1 * v);
       twist_.linear.x = trigger_value;
     }
 
     // update angular z based on joystick
-    float joystick_value = map(msg->axes[3], -1.0, 1.0, -1.0, 1.0);
+    float joystick_value = map(msg->axes[3], -1.0, 1.0, -1.0 * rad, 1.0 * rad);
     twist_.angular.z = (joystick_value > 0.0) ? map(joystick_value, 0.0, 1.0, 0.0, 1.0) : map(joystick_value, -1.0, 0.0, -1.0, 0.0);
 
     twist_pub_->publish(twist_);
