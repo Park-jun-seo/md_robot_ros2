@@ -695,22 +695,22 @@ load parameter
 void parsingParameter(std::shared_ptr<rclcpp::Node> node)
 {
     // Do something with the node
-    node->declare_parameter("use_MDUI");
-    node->declare_parameter("wheel_radius");
-    node->declare_parameter("wheel_length");
-    node->declare_parameter("reduction");
-    node->declare_parameter("motor_pole");
-    node->declare_parameter("reverse_direction");
-    node->declare_parameter("maxrpm");
-    node->declare_parameter("motor_posi");
-    node->declare_parameter("encoder_PPR");
-    node->declare_parameter("position_proportion_gain");
-    node->declare_parameter("speed_proportion_gain");
-    node->declare_parameter("integral_gain");
-    node->declare_parameter("slow_start");
-    node->declare_parameter("slow_down");
-    node->declare_parameter("usb");
-    node->declare_parameter("fb_state");
+    node->declare_parameter<std::string>("use_MDUI",".");
+    node->declare_parameter<std::string>("wheel_radius",".");
+    node->declare_parameter<std::string>("wheel_length",".");
+    node->declare_parameter<std::string>("reduction",".");
+    node->declare_parameter<std::string>("motor_pole",".");
+    node->declare_parameter<std::string>("reverse_direction",".");
+    node->declare_parameter<std::string>("maxrpm",".");
+    node->declare_parameter<std::string>("motor_posi",".");
+    node->declare_parameter<std::string>("encoder_PPR",".");
+    node->declare_parameter<std::string>("position_proportion_gain",".");
+    node->declare_parameter<std::string>("speed_proportion_gain",".");
+    node->declare_parameter<std::string>("integral_gain",".");
+    node->declare_parameter<std::string>("slow_start",".");
+    node->declare_parameter<std::string>("slow_down",".");
+    node->declare_parameter<std::string>("usb",".");
+    node->declare_parameter<std::string>("fb_state",".");
 
     if (node->has_parameter("usb"))
     {
