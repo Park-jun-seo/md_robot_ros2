@@ -43,12 +43,18 @@ add_executable(joy_test src/joy_test.cpp)
 ament_target_dependencies(joy_test rclcpp std_msgs sensor_msgs geometry_msgs)
 target_link_libraries(joy_test ${rclcpp_LIBRARIES} ${std_msgs_LIBRARIES})
 
+add_executable(webot_test src/webot_test.cpp)
+ament_target_dependencies(webot_test rclcpp std_msgs sensor_msgs geometry_msgs)
+target_link_libraries(webot_test ${rclcpp_LIBRARIES} ${std_msgs_LIBRARIES})
+
 
 
 # Install
 install(TARGETS
   ${PROJECT_NAME}
   joy_test
+  webot_test
+
   DESTINATION lib/${PROJECT_NAME})
 
 # Install other files needed by the package
