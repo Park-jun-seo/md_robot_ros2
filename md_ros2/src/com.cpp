@@ -121,7 +121,8 @@ int MdReceiveProc(rclcpp::Node::SharedPtr node)
         {
             memcpy((char *)&curr_pid_pnt_main_data, (char *)pRcvData, sizeof(PID_PNT_MAIN_DATA_t));
 
-            CalRobotPoseFromRPM(&curr_pid_pnt_main_data, node);
+            // CalRobotPoseFromRPM(&curr_pid_pnt_main_data, node);
+            Status(&curr_pid_pnt_main_data, node);
         }
         break;
     }

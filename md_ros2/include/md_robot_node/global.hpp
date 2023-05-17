@@ -16,6 +16,7 @@
 #include "std_msgs/msg/int16.hpp"
 #include "std_msgs/msg/int32.hpp"
 #include "std_msgs/msg/float32.hpp"
+#include "std_msgs/msg/float64.hpp"
 #include "std_msgs/msg/empty.hpp"
 #include "std_msgs/msg/bool.hpp"
 

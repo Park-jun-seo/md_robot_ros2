@@ -337,6 +337,7 @@ void SetRPM(rclcpp::Node::SharedPtr node);
 
 void PubRobotPose(const md_msgs::msg::Pose& msg_content, rclcpp::Node::SharedPtr node);
 void PubRobotRPM(const md_msgs::msg::RPM& msg_content, rclcpp::Node::SharedPtr node);
+void Status(PID_PNT_MAIN_DATA_t *pData, rclcpp::Node::SharedPtr node);
 
 void InitMotorParameter(rclcpp::Node::SharedPtr node);
 void parsingParameter(std::shared_ptr<rclcpp::Node> node);

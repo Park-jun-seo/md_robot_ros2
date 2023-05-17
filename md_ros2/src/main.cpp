@@ -2,9 +2,6 @@
 #include "md_robot_node/main.hpp"
 #include "md_robot_node/com.hpp"
 
-// md_msgs::msg::Pose robot_pose;
-// md_msgs::msg::RPM robot_rpm;
-
 ROBOT_PARAMETER_t robotParamData;
 
 SETTINNG_PARAM_STEP_t byCntInitStep;
@@ -37,24 +34,185 @@ int R_brake_data = -1;
 double L_RPM = 0;
 double R_RPM = 0;
 
-void PubRobotPose(const md_msgs::msg::Pose &msg, rclcpp::Node::SharedPtr node)
+void Status(PID_PNT_MAIN_DATA_t *pData, rclcpp::Node::SharedPtr node)
 {
-    rclcpp::QoS qos_profile = rclcpp::QoS(rclcpp::KeepLast(10));
-    std::string topic_name = "/robot_pose/"+robotParamData.fb_state;
+    md_msgs::msg::RPM robot_rpm;
+    int16_t rpm_left;
+    int16_t rpm_right;
 
-    auto robot_pose_pub = node->create_publisher<md_msgs::msg::Pose>(topic_name, qos_profile);
-    robot_pose_pub->publish(msg);
-    return;
-}
+    rpm_left = pData->rpm_id1;
+    if (rpm_left > 0)
+    {
+        rpm_left = rpm_left + (robotParamData.nGearRatio / 2);
+    }
+    else
+    {
+        rpm_left = rpm_left - (robotParamData.nGearRatio / 2);
+    }
+    rpm_left /= robotParamData.nGearRatio;
 
-void PubRobotRPM(const md_msgs::msg::RPM &msg, rclcpp::Node::SharedPtr node)
-{
+    rpm_right = pData->rpm_id2;
+    if (rpm_right > 0)
+    {
+        rpm_right = rpm_right + (robotParamData.nGearRatio / 2);
+    }
+    else
+    {
+        rpm_right = rpm_right - (robotParamData.nGearRatio / 2);
+    }
+    rpm_right /= robotParamData.nGearRatio;
+
+    int16_t current_id1 = pData->current_id1;
+    MOTOR_STATE_t mtr_state_id1 =  pData->mtr_state_id1;
+    int32_t mtr_pos_id1 =  pData->mtr_pos_id1;
+
+    int16_t current_id2 =  pData->current_id2;
+    MOTOR_STATE_t mtr_state_id2 =  pData->mtr_state_id2;
+    int32_t mtr_pos_id2 = pData->mtr_pos_id1;
+
+    robot_rpm.l_rpm = rpm_left;
+    robot_rpm.r_rpm = rpm_right;
+
     rclcpp::QoS qos_profile = rclcpp::QoS(rclcpp::KeepLast(10));
     std::string topic_name = "/heroehs/labor/whl/"+robotParamData.fb_state+"/rpm";
     auto robot_rpm_pub = node->create_publisher<md_msgs::msg::RPM>(topic_name, qos_profile);
-    robot_rpm_pub->publish(msg);
+    robot_rpm_pub->publish(robot_rpm);
+
+    auto robot_rad_l_pub = node->create_publisher<std_msgs::msg::Float64>(
+        "/heroehs/labor/whl/"+robotParamData.fb_state+"l"+"/velocity/command", qos_profile);
+    auto robot_rad_r_pub = node->create_publisher<std_msgs::msg::Float64>(
+        "/heroehs/labor/whl/"+robotParamData.fb_state+"r"+"/velocity/command", qos_profile);
+
+    std_msgs::msg::Float64 l_rad_msg;
+    std_msgs::msg::Float64 r_rad_msg;
+
+    l_rad_msg.data = rpm_left * 0.1047197551;
+    r_rad_msg.data = rpm_right * 0.1047197551;
+
+    robot_rad_l_pub->publish(l_rad_msg);
+    robot_rad_r_pub->publish(r_rad_msg);
+
+    auto robot_current_l_pub = node->create_publisher<std_msgs::msg::Float64>(
+        "/heroehs/labor/whl/"+robotParamData.fb_state+"l"+"/current", qos_profile);
+
+    auto robot_current_r_pub = node->create_publisher<std_msgs::msg::Float64>(
+        "/heroehs/labor/whl/"+robotParamData.fb_state+"r"+"/current", qos_profile);
+
+    std_msgs::msg::Float64 l_current_msg;
+    std_msgs::msg::Float64 r_current_msg;
+
+    l_current_msg.data = current_id1;
+    r_current_msg.data = current_id2;
+
+    robot_current_l_pub->publish(l_current_msg);
+    robot_current_r_pub->publish(r_current_msg);
+
+    auto robot_state_l_pub = node->create_publisher<std_msgs::msg::String>(
+        "/heroehs/labor/state/"+robotParamData.fb_state+"/l", qos_profile);
+
+    auto robot_state_r_pub = node->create_publisher<std_msgs::msg::String>(
+        "/heroehs/labor/state/"+robotParamData.fb_state+"/r", qos_profile);
+
+    if (mtr_state_id1.val != 0)
+    {
+        std_msgs::msg::String l_state_msg;
+        if (mtr_state_id1.bits.Alarm)
+        {
+            l_state_msg.data = "Alarm bit is set.";
+            robot_state_l_pub->publish(l_state_msg);
+        }
+        if (mtr_state_id1.bits.CtrlFail)
+        {
+             l_state_msg.data = "CtrlFail bit is set.";
+            robot_state_l_pub->publish(l_state_msg);
+        }
+        if (mtr_state_id1.bits.OverVolt)
+        {
+            l_state_msg.data = "OverVolt bit is set.";
+            robot_state_l_pub->publish(l_state_msg);
+        }
+        if (mtr_state_id1.bits.OverTemp)
+        {
+            l_state_msg.data = "OverTemp bit is set.";
+            robot_state_l_pub->publish(l_state_msg);
+        }
+        if (mtr_state_id1.bits.OverLoad)
+        {
+            l_state_msg.data = "OverLoad bit is set.";
+            robot_state_l_pub->publish(l_state_msg);
+        }
+        if (mtr_state_id1.bits.HallFail)
+        {
+            l_state_msg.data = "HallFail bit is set.";
+            robot_state_l_pub->publish(l_state_msg);
+        }
+        if (mtr_state_id1.bits.InvVel)
+        {
+            l_state_msg.data = "InvVel bit is set.";
+            robot_state_l_pub->publish(l_state_msg);
+        }
+        if (mtr_state_id1.bits.Stall)
+        {
+            l_state_msg.data = "Stall bit is set.";
+            robot_state_l_pub->publish(l_state_msg);
+        }
+    }
+
+    if (mtr_state_id2.val != 0)
+    {
+        std_msgs::msg::String r_state_msg;
+        if (mtr_state_id2.bits.Alarm)
+        {
+            r_state_msg.data = "Alarm bit is set.";
+            robot_state_r_pub->publish(r_state_msg);
+        }
+        if (mtr_state_id2.bits.CtrlFail)
+        {
+             r_state_msg.data = "CtrlFail bit is set.";
+            robot_state_r_pub->publish(r_state_msg);
+        }
+        if (mtr_state_id2.bits.OverVolt)
+        {
+            r_state_msg.data = "OverVolt bit is set.";
+            robot_state_r_pub->publish(r_state_msg);
+        }
+        if (mtr_state_id2.bits.OverTemp)
+        {
+            r_state_msg.data = "OverTemp bit is set.";
+            robot_state_r_pub->publish(r_state_msg);
+        }
+        if (mtr_state_id2.bits.OverLoad)
+        {
+            r_state_msg.data = "OverLoad bit is set.";
+            robot_state_r_pub->publish(r_state_msg);
+        }
+        if (mtr_state_id2.bits.HallFail)
+        {
+            r_state_msg.data = "HallFail bit is set.";
+            robot_state_r_pub->publish(r_state_msg);
+        }
+        if (mtr_state_id2.bits.InvVel)
+        {
+            r_state_msg.data = "InvVel bit is set.";
+            robot_state_r_pub->publish(r_state_msg);
+        }
+        if (mtr_state_id2.bits.Stall)
+        {
+            r_state_msg.data = "Stall bit is set.";
+            robot_state_r_pub->publish(r_state_msg);
+        }
+    }
     return;
 }
+
+// void PubRobotRPM(const md_msgs::msg::RPM &msg, rclcpp::Node::SharedPtr node)
+// {
+//     rclcpp::QoS qos_profile = rclcpp::QoS(rclcpp::KeepLast(10));
+//     std::string topic_name = "/heroehs/labor/whl/"+robotParamData.fb_state+"/rpm";
+//     auto robot_rpm_pub = node->create_publisher<md_msgs::msg::RPM>(topic_name, qos_profile);
+//     robot_rpm_pub->publish(msg);
+//     return;
+// }
 
 int main(int argc, char *argv[])
 {
@@ -177,8 +335,28 @@ int main(int argc, char *argv[])
             SetRPMCallback(msg, node);
         });
 
-    std::string rpm_topic_name = "/heroehs/labor/whl/"+robotParamData.fb_state+"/rpm";
-    auto robot_rpm_pub = node->create_publisher<md_msgs::msg::RPM>(rpm_topic_name, qos_profile);
+
+    /**********************************************************************************************************/
+    // std::string rpm_topic_name = "/heroehs/labor/whl/"+robotParamData.fb_state+"/rpm";
+    auto robot_rpm_pub = node->create_publisher<md_msgs::msg::RPM>("/heroehs/labor/whl/"+robotParamData.fb_state+"/rpm", qos_profile);
+
+    auto robot_rad_l_pub = node->create_publisher<std_msgs::msg::Float64>(
+        "/heroehs/labor/whl/"+robotParamData.fb_state+"l"+"/velocity/command", qos_profile);
+    auto robot_rad_r_pub = node->create_publisher<std_msgs::msg::Float64>(
+        "/heroehs/labor/whl/"+robotParamData.fb_state+"r"+"/velocity/command", qos_profile);
+
+    auto robot_current_l_pub = node->create_publisher<std_msgs::msg::Float64>(
+        "/heroehs/labor/whl/"+robotParamData.fb_state+"l"+"/current", qos_profile);
+
+    auto robot_current_r_pub = node->create_publisher<std_msgs::msg::Float64>(
+        "/heroehs/labor/whl/"+robotParamData.fb_state+"r"+"/current", qos_profile);
+
+    auto robot_state_l_pub = node->create_publisher<std_msgs::msg::String>(
+        "/heroehs/labor/state/"+robotParamData.fb_state+"/l", qos_profile);
+
+    auto robot_state_b_pub = node->create_publisher<std_msgs::msg::String>(
+        "/heroehs/labor/state/"+robotParamData.fb_state+"/r", qos_profile);
+
     /**********************************************************************************************************/
 
     rclcpp::WallRate r(std::chrono::milliseconds(1));
@@ -481,7 +659,6 @@ void RequestRobotStatusTask(void)
             reset_odom_flag = false;
 
             PutMdData(PID_POSI_RESET, robotParamData.nRMID, NULL, 0);
-            ResetOdom();
         }
         else if (reset_alarm_flag == true)
         {

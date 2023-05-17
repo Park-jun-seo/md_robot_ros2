@@ -68,8 +68,6 @@ void InitMotorParameter(rclcpp::Node::SharedPtr node)
 
         PutMdData(PID_POSI_RESET, robotParamData.nRMID, NULL, 0);
 
-        ResetOdom();
-
         byCntInitStep = SETTING_PARAM_STEP_PID_SLOW_START;
         break;
     }
