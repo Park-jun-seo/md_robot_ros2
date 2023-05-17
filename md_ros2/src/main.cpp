@@ -34,8 +34,8 @@ extern PID_ROBOT_MONITOR_t curr_pid_robot_monitor;
 int L_brake_data = -1;
 int R_brake_data = -1;
 
-// double L_RPM = 0;
-// double R_RPM = 0;
+double L_RPM = 0;
+double R_RPM = 0;
 
 void PubRobotPose(const md_msgs::msg::Pose &msg, rclcpp::Node::SharedPtr node)
 {
@@ -169,6 +169,14 @@ int main(int argc, char *argv[])
             BrakeCallback(msg, node);
         });
 
+    std::string set_rpm_topic_name = "/heroehs/labor/whl/"+robotParamData.fb_state+"/set_rpm";
+    auto rpm_sub = node->create_subscription<md_msgs::msg::RPM>(
+        topic_name, 10,
+        [node](md_msgs::msg::RPM::SharedPtr msg)
+        {
+            SetRPMCallback(msg, node);
+        });
+
     std::string rpm_topic_name = "/heroehs/labor/whl/"+robotParamData.fb_state+"/rpm";
     auto robot_rpm_pub = node->create_publisher<md_msgs::msg::RPM>(rpm_topic_name, qos_profile);
     /**********************************************************************************************************/
@@ -266,6 +274,12 @@ Set RPM
 
 ***************************************************************************************/
 
+void SetRPMCallback(const md_msgs::msg::RPM::SharedPtr msg, rclcpp::Node::SharedPtr node)
+{
+    L_RPM = msg->l_rpm;
+    R_RPM = msg->r_rpm;
+}
+
 void SetRPM(rclcpp::Node::SharedPtr node)
 {
     velCmdUpdateCount = 0;
@@ -278,9 +292,11 @@ void SetRPM(rclcpp::Node::SharedPtr node)
 
     p = &pid_pnt_vel_cmd;
     p->enable_id1 = 1;
-    p->rpm_id1 = pGoalRPMSpeed[0];
+    // p->rpm_id1 = pGoalRPMSpeed[0];
+    p->rpm_id1 = L_RPM;
     p->enable_id2 = 1;
-    p->rpm_id2 = pGoalRPMSpeed[1];
+    // p->rpm_id2 = pGoalRPMSpeed[1];
+    p->rpm_id2 = R_RPM;
     // p->req_monitor_id = REQUEST_PNT_MAIN_DATA;
     p->req_monitor_id = 0;
 
