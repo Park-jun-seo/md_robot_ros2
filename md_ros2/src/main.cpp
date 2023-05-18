@@ -85,9 +85,9 @@ void Status(PID_PNT_MAIN_DATA_t *pData, rclcpp::Node::SharedPtr node)
     robot_rpm_pub->publish(rpm_msg);
 
     auto robot_ms_pub = node->create_publisher<std_msgs::msg::Float32MultiArray>(
-        "/heroehs/labor/whl/" + robotParamData.fb_state+"/ms", qos_profile);
+        "/heroehs/labor/whl/" + robotParamData.fb_state + "/ms", qos_profile);
 
-    static double temp  = (2.0 * M_PI * robotParamData.wheel_radius) / 60;
+    static double temp = (2.0 * M_PI * robotParamData.wheel_radius) / 60;
 
     // temp = (2.0 * M_PI * robotParamData.wheel_radius) / 60;
 
@@ -337,13 +337,20 @@ int main(int argc, char *argv[])
             SetRPMCallback(msg, node);
         });
 
+    auto stop_mode_sub = node->create_subscription<std_msgs::msg::Int16>(
+        "/heroehs/labor/whl/" + robotParamData.fb_state + "/set_stop_mode", 10,
+        [node](std_msgs::msg::Int16::SharedPtr msg)
+        {
+            SetStopModeCallback(msg, node);
+        });
+
     /**********************************************************************************************************/
     // std::string rpm_topic_name = "/heroehs/labor/whl/"+robotParamData.fb_state+"/rpm";
     auto robot_rpm_pub = node->create_publisher<std_msgs::msg::Float32MultiArray>(
         "/heroehs/labor/whl/" + robotParamData.fb_state + "/rpm", qos_profile);
 
     auto robot_ms_pub = node->create_publisher<std_msgs::msg::Float32MultiArray>(
-        "/heroehs/labor/whl/" + robotParamData.fb_state+"/ms", qos_profile);
+        "/heroehs/labor/whl/" + robotParamData.fb_state + "/ms", qos_profile);
 
     auto robot_current_l_pub = node->create_publisher<std_msgs::msg::Float32>(
         "/heroehs/labor/whl/" + robotParamData.fb_state + "l" + "/current", qos_profile);
@@ -436,7 +443,7 @@ int main(int argc, char *argv[])
             appTick = 0;
             RequestRobotStatusTask();
         }
-        if (velCmdUpdateCount > 0 && L_brake_data == -1 && R_brake_data == -1)
+        if (velCmdUpdateCount > 0 /*&& L_brake_data == -1 && R_brake_data == -1*/)
         {
             SetRPM(node);
         }
@@ -452,11 +459,58 @@ Set RPM
 
 ***************************************************************************************/
 
+void SetStopModeCallback(const std_msgs::msg::Int16::SharedPtr msg, rclcpp::Node::SharedPtr node)
+{
+    uint8_t cmd_data;
+    switch (msg->data)
+    {
+    case 0:
+    {
+        cmd_data = 0;
+        break;
+    }
+    case 1:
+    {
+        cmd_data = 1;
+        break;
+    }
+    case 2:
+    {
+        cmd_data = 2;
+        break;
+    }
+    case 3:
+    {
+        cmd_data = 3;
+        break;
+    }
+    case 4:
+    {
+        cmd_data = 4;
+        break;
+    }
+    case 5:
+    {
+        cmd_data = 5;
+        break;
+    }
+    default:
+    {
+        return;
+    }
+    }
+    PutMdData(PID_STOP_STATUS, robotParamData.nRMID, (const uint8_t *)&cmd_data, 1);
+}
+
 void SetRPMCallback(const std_msgs::msg::Float32MultiArray::SharedPtr msg, rclcpp::Node::SharedPtr node)
 {
-    L_RPM = msg->data[0];
-    R_RPM = msg->data[1];
-    velCmdUpdateCount++;
+    if (fgInitsetting == INIT_SETTING_STATE_OK)
+    {
+        velCmdUpdateCount++;
+        L_RPM = msg->data[0];
+        R_RPM = msg->data[1];
+    }
+    return;
 }
 
 void SetRPM(rclcpp::Node::SharedPtr node)
@@ -468,14 +522,25 @@ void SetRPM(rclcpp::Node::SharedPtr node)
 
     // pGoalRPMSpeed = RobotSpeedToRPMSpeed(goal_cmd_speed, goal_cmd_ang_speed, node);
     // RCLCPP_INFO(node->get_logger(), "Goal RPM L:%d, R:%d", pGoalRPMSpeed[0], pGoalRPMSpeed[1]);
-
     p = &pid_pnt_vel_cmd;
     p->enable_id1 = 1;
-    // p->rpm_id1 = pGoalRPMSpeed[0];
-    p->rpm_id1 = L_RPM;
     p->enable_id2 = 1;
-    // p->rpm_id2 = pGoalRPMSpeed[1];
+    p->rpm_id1 = L_RPM;
     p->rpm_id2 = R_RPM;
+    if(L_brake_data !=-1)
+    {
+        p->enable_id1 = 0;
+        p->rpm_id1 = 0;
+    }
+    if(R_brake_data !=-1)
+    {
+        p->enable_id2 = 0;
+         p->rpm_id2 = 0;
+    }
+    // p->rpm_id1 = pGoalRPMSpeed[0];
+    
+    // p->rpm_id2 = pGoalRPMSpeed[1];
+   
     // p->req_monitor_id = REQUEST_PNT_MAIN_DATA;
     p->req_monitor_id = 0;
 
@@ -531,7 +596,7 @@ void BrakeCallback(const std_msgs::msg::Float32MultiArray::SharedPtr msg, rclcpp
     }
 
     p->return_type = 0;
-    if (R_brake_data >= 0 && L_brake_data >= 0)
+    if (R_brake_data >= 0 || L_brake_data >= 0)
     {
         PutMdData(PID_PNT_PROP_BRAKE, robotParamData.nRMID, (const uint8_t *)&pid_prop_brake_data, sizeof(pid_prop_brake_data));
     }

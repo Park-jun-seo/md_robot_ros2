@@ -35,4 +35,6 @@ void resetAlarmCallBack(const std_msgs::msg::Bool::SharedPtr reset_alarm_msg, rc
 
 void BrakeCallback(const std_msgs::msg::Float32MultiArray::SharedPtr msg, rclcpp::Node::SharedPtr node);
 void SetRPMCallback(const std_msgs::msg::Float32MultiArray::SharedPtr msg, rclcpp::Node::SharedPtr node);
+void SetStopModeCallback(const std_msgs::msg::Int16::SharedPtr msg, rclcpp::Node::SharedPtr node);
+
 using namespace std;
