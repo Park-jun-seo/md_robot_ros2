@@ -34,6 +34,8 @@ int R_brake_data = -1;
 double L_RPM = 0;
 double R_RPM = 0;
 
+int stop_mode = 1;
+
 void Status(PID_PNT_MAIN_DATA_t *pData, rclcpp::Node::SharedPtr node)
 {
     std_msgs::msg::Float32MultiArray rpm_msg;
@@ -467,31 +469,37 @@ void SetStopModeCallback(const std_msgs::msg::Int16::SharedPtr msg, rclcpp::Node
     case 0:
     {
         cmd_data = 0;
+        stop_mode = 0;
         break;
     }
     case 1:
     {
         cmd_data = 1;
+        stop_mode = 1;
         break;
     }
     case 2:
     {
         cmd_data = 2;
+        stop_mode = 2;
         break;
     }
     case 3:
     {
         cmd_data = 3;
+        stop_mode = 3;
         break;
     }
     case 4:
     {
         cmd_data = 4;
+        stop_mode = 4;
         break;
     }
     case 5:
     {
         cmd_data = 5;
+        stop_mode = 5;
         break;
     }
     default:
@@ -518,33 +526,40 @@ void SetRPM(rclcpp::Node::SharedPtr node)
     velCmdUpdateCount = 0;
 
     PID_PNT_VEL_CMD_t pid_pnt_vel_cmd, *p;
-    // int16_t *pGoalRPMSpeed;
-
-    // pGoalRPMSpeed = RobotSpeedToRPMSpeed(goal_cmd_speed, goal_cmd_ang_speed, node);
-    // RCLCPP_INFO(node->get_logger(), "Goal RPM L:%d, R:%d", pGoalRPMSpeed[0], pGoalRPMSpeed[1]);
+    
     p = &pid_pnt_vel_cmd;
     p->enable_id1 = 1;
     p->enable_id2 = 1;
     p->rpm_id1 = L_RPM;
     p->rpm_id2 = R_RPM;
-    if(L_brake_data !=-1)
+
+    if (L_brake_data > -1)
     {
         p->enable_id1 = 0;
-        p->rpm_id1 = 0;
     }
-    if(R_brake_data !=-1)
+
+    if (R_brake_data > -1)
     {
         p->enable_id2 = 0;
-         p->rpm_id2 = 0;
     }
-    // p->rpm_id1 = pGoalRPMSpeed[0];
-    
-    // p->rpm_id2 = pGoalRPMSpeed[1];
-   
+
+    if(L_brake_data == -2)
+    {
+        p->rpm_id1 = 0;
+    }
+
+    if(R_brake_data == -2)
+    {
+        p->rpm_id2 = 0;
+    }
+
+
     // p->req_monitor_id = REQUEST_PNT_MAIN_DATA;
     p->req_monitor_id = 0;
-
-    PutMdData(PID_PNT_VEL_CMD, robotParamData.nRMID, (const uint8_t *)&pid_pnt_vel_cmd, sizeof(pid_pnt_vel_cmd));
+    if (fgInitsetting == INIT_SETTING_STATE_OK)
+    {
+        PutMdData(PID_PNT_VEL_CMD, robotParamData.nRMID, (const uint8_t *)&pid_pnt_vel_cmd, sizeof(pid_pnt_vel_cmd));
+    }
 }
 
 /**************************************************************************************
@@ -559,27 +574,40 @@ void BrakeCallback(const std_msgs::msg::Float32MultiArray::SharedPtr msg, rclcpp
 
     p = &pid_prop_brake_data;
 
-    if (msg->data[0] <= -1)
+    p->l_brake_disable = 0;
+    p->r_brake_disable = 0;
+
+    p->l_brake_data = 0;
+    p->l_brake_data = 0;
+
+    if (msg->data[0] <= -2)
     {
-        p->l_brake_disable = 0;
+        L_brake_data = -2;
+    }
+    else if (msg->data[0] == -1)
+    {
         L_brake_data = -1;
     }
+
     else if (msg->data[0] >= 0 && msg->data[0] <= 1000)
     {
-        p->r_brake_disable = 1;
+        p->l_brake_disable = 1;
         L_brake_data = msg->data[0];
         p->l_brake_data = L_brake_data;
     }
     else if (msg->data[0] > 1000)
     {
-        p->r_brake_disable = 1;
+        p->l_brake_disable = 1;
         L_brake_data = 1000;
         p->l_brake_data = L_brake_data;
     }
 
-    if (msg->data[1] <= -1)
+    if (msg->data[1] <= -2)
     {
-        p->r_brake_disable = 0;
+        R_brake_data = -2;
+    }
+    else if (msg->data[1] == -1)
+    {
         R_brake_data = -1;
     }
     else if (msg->data[1] >= 0 && msg->data[1] <= 1000)
@@ -596,7 +624,8 @@ void BrakeCallback(const std_msgs::msg::Float32MultiArray::SharedPtr msg, rclcpp
     }
 
     p->return_type = 0;
-    if (R_brake_data >= 0 || L_brake_data >= 0)
+
+    if ((R_brake_data >= 0 || L_brake_data >= 0) && fgInitsetting == INIT_SETTING_STATE_OK)
     {
         PutMdData(PID_PNT_PROP_BRAKE, robotParamData.nRMID, (const uint8_t *)&pid_prop_brake_data, sizeof(pid_prop_brake_data));
     }

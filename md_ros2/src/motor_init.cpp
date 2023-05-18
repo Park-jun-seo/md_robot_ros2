@@ -240,7 +240,7 @@ void InitMotorParameter(rclcpp::Node::SharedPtr node)
         RCLCPP_INFO(node->get_logger(), "PID_STOP_STATUS(%d)", PID_STOP_STATUS);
 #endif
 
-        cmd_data = 3; // STOP_SERVO_LOCK
+        cmd_data = 1; // STOP_SERVO_LOCK
     // 0 : 기준속도입력 0 인 경우 모터를 강제정지하고
     // 속도가 0 에 도달하면 제어상태 해제(FREE)
     // 1 : 모터가 정지되면 정지한 위치를 계속하여
