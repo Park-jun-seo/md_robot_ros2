@@ -19,6 +19,7 @@
 #include "std_msgs/msg/float64.hpp"
 #include "std_msgs/msg/empty.hpp"
 #include "std_msgs/msg/bool.hpp"
+#include "std_msgs/msg/float32_multi_array.hpp"
 
 #include "md_msgs/msg/brake.hpp"
 #include "md_msgs/msg/pose.hpp"

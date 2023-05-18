@@ -74,23 +74,27 @@ void Status(PID_PNT_MAIN_DATA_t *pData, rclcpp::Node::SharedPtr node)
     robot_rpm.r_rpm = rpm_right;
 
     rclcpp::QoS qos_profile = rclcpp::QoS(rclcpp::KeepLast(10));
+
     std::string topic_name = "/heroehs/labor/whl/"+robotParamData.fb_state+"/rpm";
     auto robot_rpm_pub = node->create_publisher<md_msgs::msg::RPM>(topic_name, qos_profile);
     robot_rpm_pub->publish(robot_rpm);
 
-    auto robot_rad_l_pub = node->create_publisher<std_msgs::msg::Float64>(
-        "/heroehs/labor/whl/"+robotParamData.fb_state+"l"+"/velocity/command", qos_profile);
-    auto robot_rad_r_pub = node->create_publisher<std_msgs::msg::Float64>(
-        "/heroehs/labor/whl/"+robotParamData.fb_state+"r"+"/velocity/command", qos_profile);
+    auto robot_ms_pub = node->create_publisher<std_msgs::msg::Float32MultiArray>(
+        "/heroehs/labor/motor_vel/"+robotParamData.fb_state, qos_profile);
 
-    std_msgs::msg::Float64 l_rad_msg;
-    std_msgs::msg::Float64 r_rad_msg;
+    std_msgs::msg::Float32MultiArray rpm_msg;
 
-    l_rad_msg.data = rpm_left * 0.1047197551;
-    r_rad_msg.data = rpm_right * 0.1047197551;
+    rpm_msg.data.resize(2);
 
-    robot_rad_l_pub->publish(l_rad_msg);
-    robot_rad_r_pub->publish(r_rad_msg);
+    double temp;
+
+    temp = (2.0 * M_PI * robotParamData.wheel_radius) / 60;
+
+    rpm_msg.data[0]  = temp * (double)rpm_left;
+    rpm_msg.data[1]  = temp * (double)rpm_right;
+
+    robot_ms_pub->publish(rpm_msg);
+
 
     auto robot_current_l_pub = node->create_publisher<std_msgs::msg::Float64>(
         "/heroehs/labor/whl/"+robotParamData.fb_state+"l"+"/current", qos_profile);
@@ -340,10 +344,8 @@ int main(int argc, char *argv[])
     // std::string rpm_topic_name = "/heroehs/labor/whl/"+robotParamData.fb_state+"/rpm";
     auto robot_rpm_pub = node->create_publisher<md_msgs::msg::RPM>("/heroehs/labor/whl/"+robotParamData.fb_state+"/rpm", qos_profile);
 
-    auto robot_rad_l_pub = node->create_publisher<std_msgs::msg::Float64>(
-        "/heroehs/labor/whl/"+robotParamData.fb_state+"l"+"/velocity/command", qos_profile);
-    auto robot_rad_r_pub = node->create_publisher<std_msgs::msg::Float64>(
-        "/heroehs/labor/whl/"+robotParamData.fb_state+"r"+"/velocity/command", qos_profile);
+    auto robot_ms_pub = node->create_publisher<std_msgs::msg::Float32MultiArray>(
+        "/heroehs/labor/motor_vel/"+robotParamData.fb_state, qos_profile);
 
     auto robot_current_l_pub = node->create_publisher<std_msgs::msg::Float64>(
         "/heroehs/labor/whl/"+robotParamData.fb_state+"l"+"/current", qos_profile);
