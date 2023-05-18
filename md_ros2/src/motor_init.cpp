@@ -240,7 +240,22 @@ void InitMotorParameter(rclcpp::Node::SharedPtr node)
         RCLCPP_INFO(node->get_logger(), "PID_STOP_STATUS(%d)", PID_STOP_STATUS);
 #endif
 
-        cmd_data = 1; // STOP_SERVO_LOCK
+        cmd_data = 3; // STOP_SERVO_LOCK
+    // 0 : 기준속도입력 0 인 경우 모터를 강제정지하고
+    // 속도가 0 에 도달하면 제어상태 해제(FREE)
+    // 1 : 모터가 정지되면 정지한 위치를 계속하여
+    // 유지
+    // 2 : 모터가 정지되면 젂기적브레이크 적용
+    // 3 : 기준입력이 0 이 되면 제어상태 해제(FREE)
+    // 4 : 리미트스위치에 의한 동작에서 속도 0 으로
+    // 제어후에 모터정지상태에서 브레이크 동작
+    // 5 : START/STOP 의 입력으로 속도제어하는
+    // 경우에, 이 싞호가 OFF 이 되면
+    // RUN/BRAKE 싞호와 동일한 동작을
+    // 수행(RUN/BRAKE 가 없는 모델에서 주로적용)
+    // MD500S, MD200T, etc.
+    // 183, TMID, ID, 24, 1, DATA, CHK
+
  
 
         PutMdData(PID_STOP_STATUS, robotParamData.nRMID, (const uint8_t *)&cmd_data, 1);

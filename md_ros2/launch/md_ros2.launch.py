@@ -25,8 +25,8 @@ def generate_launch_description():
     position_proportion_gain = LaunchConfiguration('position_proportion_gain', default='20')  #<!-- reference PID 203(PID_GAIN) -->
     speed_proportion_gain = LaunchConfiguration('speed_proportion_gain', default='50')     #<!-- reference PID 203(PID_GAIN) -->
     integral_gain = LaunchConfiguration('integral_gain', default='1800')           #<!-- reference PID 203(PID_GAIN) -->
-    slow_start = LaunchConfiguration('slow_start', default='300')                #<!-- unit: RPM -->
-    slow_down = LaunchConfiguration('slow_down', default='300')                 #<!-- unit: RPM -->
+    slow_start = LaunchConfiguration('slow_start', default='0')                #<!-- unit: RPM -->
+    slow_down = LaunchConfiguration('slow_down', default='0')                 #<!-- unit: RPM -->
     
     fb_state1 = LaunchConfiguration('fb_state', default='f')   
     fb_state2 = LaunchConfiguration('fb_state', default='b')          
