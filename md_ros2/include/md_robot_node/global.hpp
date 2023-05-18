@@ -33,6 +33,6 @@ void cmdVelCallBack(const geometry_msgs::msg::Twist::SharedPtr keyVel); // from 
 void resetOdomCallBack(const std_msgs::msg::Bool::SharedPtr reset_odom_msg, rclcpp::Node::SharedPtr node);
 void resetAlarmCallBack(const std_msgs::msg::Bool::SharedPtr reset_alarm_msg, rclcpp::Node::SharedPtr node);
 
-void BrakeCallback(const md_msgs::msg::Brake::SharedPtr msg, rclcpp::Node::SharedPtr node);
-void SetRPMCallback(const md_msgs::msg::RPM::SharedPtr msg, rclcpp::Node::SharedPtr node);
+void BrakeCallback(const std_msgs::msg::Float32MultiArray::SharedPtr msg, rclcpp::Node::SharedPtr node);
+void SetRPMCallback(const std_msgs::msg::Float32MultiArray::SharedPtr msg, rclcpp::Node::SharedPtr node);
 using namespace std;

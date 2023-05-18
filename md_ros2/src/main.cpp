@@ -36,7 +36,11 @@ double R_RPM = 0;
 
 void Status(PID_PNT_MAIN_DATA_t *pData, rclcpp::Node::SharedPtr node)
 {
-    md_msgs::msg::RPM robot_rpm;
+    std_msgs::msg::Float32MultiArray rpm_msg;
+    std_msgs::msg::Float32MultiArray ms_msg;
+    rpm_msg.data.resize(2);
+    ms_msg.data.resize(2);
+
     int16_t rpm_left;
     int16_t rpm_right;
 
@@ -63,149 +67,143 @@ void Status(PID_PNT_MAIN_DATA_t *pData, rclcpp::Node::SharedPtr node)
     rpm_right /= robotParamData.nGearRatio;
 
     int16_t current_id1 = pData->current_id1;
-    MOTOR_STATE_t mtr_state_id1 =  pData->mtr_state_id1;
-    int32_t mtr_pos_id1 =  pData->mtr_pos_id1;
+    MOTOR_STATE_t mtr_state_id1 = pData->mtr_state_id1;
+    int32_t mtr_pos_id1 = pData->mtr_pos_id1;
 
-    int16_t current_id2 =  pData->current_id2;
-    MOTOR_STATE_t mtr_state_id2 =  pData->mtr_state_id2;
+    int16_t current_id2 = pData->current_id2;
+    MOTOR_STATE_t mtr_state_id2 = pData->mtr_state_id2;
     int32_t mtr_pos_id2 = pData->mtr_pos_id1;
 
-    robot_rpm.l_rpm = rpm_left;
-    robot_rpm.r_rpm = rpm_right;
+    rpm_msg.data[0] = (double)rpm_left;
+    rpm_msg.data[1] = (double)rpm_right;
 
     rclcpp::QoS qos_profile = rclcpp::QoS(rclcpp::KeepLast(10));
 
-    std::string topic_name = "/heroehs/labor/whl/"+robotParamData.fb_state+"/rpm";
-    auto robot_rpm_pub = node->create_publisher<md_msgs::msg::RPM>(topic_name, qos_profile);
-    robot_rpm_pub->publish(robot_rpm);
+    auto robot_rpm_pub = node->create_publisher<std_msgs::msg::Float32MultiArray>(
+        "/heroehs/labor/whl/" + robotParamData.fb_state + "/rpm", qos_profile);
+
+    robot_rpm_pub->publish(rpm_msg);
 
     auto robot_ms_pub = node->create_publisher<std_msgs::msg::Float32MultiArray>(
-        "/heroehs/labor/motor_vel/"+robotParamData.fb_state, qos_profile);
+        "/heroehs/labor/whl/" + robotParamData.fb_state+"/ms", qos_profile);
 
-    std_msgs::msg::Float32MultiArray rpm_msg;
+    static double temp  = (2.0 * M_PI * robotParamData.wheel_radius) / 60;
 
-    rpm_msg.data.resize(2);
+    // temp = (2.0 * M_PI * robotParamData.wheel_radius) / 60;
 
-    double temp;
+    ms_msg.data[0] = temp * (double)rpm_left;
+    ms_msg.data[1] = temp * (double)rpm_right;
 
-    temp = (2.0 * M_PI * robotParamData.wheel_radius) / 60;
+    robot_ms_pub->publish(ms_msg);
 
-    rpm_msg.data[0]  = temp * (double)rpm_left;
-    rpm_msg.data[1]  = temp * (double)rpm_right;
+    auto robot_current_l_pub = node->create_publisher<std_msgs::msg::Float32>(
+        "/heroehs/labor/whl/" + robotParamData.fb_state + "l" + "/current", qos_profile);
 
-    robot_ms_pub->publish(rpm_msg);
+    auto robot_current_r_pub = node->create_publisher<std_msgs::msg::Float32>(
+        "/heroehs/labor/whl/" + robotParamData.fb_state + "r" + "/current", qos_profile);
 
+    std_msgs::msg::Float32 l_current_msg;
+    std_msgs::msg::Float32 r_current_msg;
 
-    auto robot_current_l_pub = node->create_publisher<std_msgs::msg::Float64>(
-        "/heroehs/labor/whl/"+robotParamData.fb_state+"l"+"/current", qos_profile);
-
-    auto robot_current_r_pub = node->create_publisher<std_msgs::msg::Float64>(
-        "/heroehs/labor/whl/"+robotParamData.fb_state+"r"+"/current", qos_profile);
-
-    std_msgs::msg::Float64 l_current_msg;
-    std_msgs::msg::Float64 r_current_msg;
-
-    l_current_msg.data = current_id1;
-    r_current_msg.data = current_id2;
+    l_current_msg.data = current_id1 * 0.1;
+    r_current_msg.data = current_id2 * 0.1;
 
     robot_current_l_pub->publish(l_current_msg);
     robot_current_r_pub->publish(r_current_msg);
 
-    auto robot_state_l_pub = node->create_publisher<std_msgs::msg::String>(
-        "/heroehs/labor/state/"+robotParamData.fb_state+"/l", qos_profile);
+    // if (mtr_state_id1.val != 0)
+    // {
+    //     auto robot_state_l_pub = node->create_publisher<std_msgs::msg::String>(
+    //     "/heroehs/labor/state/"+robotParamData.fb_state+"/l", qos_profile);
+    //     std_msgs::msg::String l_state_msg;
+    //     if (mtr_state_id1.bits.Alarm)
+    //     {
+    //         l_state_msg.data = "Alarm bit is set.";
+    //         robot_state_l_pub->publish(l_state_msg);
+    //     }
+    //     if (mtr_state_id1.bits.CtrlFail)
+    //     {
+    //          l_state_msg.data = "CtrlFail bit is set.";
+    //         robot_state_l_pub->publish(l_state_msg);
+    //     }
+    //     if (mtr_state_id1.bits.OverVolt)
+    //     {
+    //         l_state_msg.data = "OverVolt bit is set.";
+    //         robot_state_l_pub->publish(l_state_msg);
+    //     }
+    //     if (mtr_state_id1.bits.OverTemp)
+    //     {
+    //         l_state_msg.data = "OverTemp bit is set.";
+    //         robot_state_l_pub->publish(l_state_msg);
+    //     }
+    //     if (mtr_state_id1.bits.OverLoad)
+    //     {
+    //         l_state_msg.data = "OverLoad bit is set.";
+    //         robot_state_l_pub->publish(l_state_msg);
+    //     }
+    //     if (mtr_state_id1.bits.HallFail)
+    //     {
+    //         l_state_msg.data = "HallFail bit is set.";
+    //         robot_state_l_pub->publish(l_state_msg);
+    //     }
+    //     if (mtr_state_id1.bits.InvVel)
+    //     {
+    //         l_state_msg.data = "InvVel bit is set.";
+    //         robot_state_l_pub->publish(l_state_msg);
+    //     }
+    //     if (mtr_state_id1.bits.Stall)
+    //     {
+    //         l_state_msg.data = "Stall bit is set.";
+    //         robot_state_l_pub->publish(l_state_msg);
+    //     }
+    // }
 
-    auto robot_state_r_pub = node->create_publisher<std_msgs::msg::String>(
-        "/heroehs/labor/state/"+robotParamData.fb_state+"/r", qos_profile);
-
-    if (mtr_state_id1.val != 0)
-    {
-        std_msgs::msg::String l_state_msg;
-        if (mtr_state_id1.bits.Alarm)
-        {
-            l_state_msg.data = "Alarm bit is set.";
-            robot_state_l_pub->publish(l_state_msg);
-        }
-        if (mtr_state_id1.bits.CtrlFail)
-        {
-             l_state_msg.data = "CtrlFail bit is set.";
-            robot_state_l_pub->publish(l_state_msg);
-        }
-        if (mtr_state_id1.bits.OverVolt)
-        {
-            l_state_msg.data = "OverVolt bit is set.";
-            robot_state_l_pub->publish(l_state_msg);
-        }
-        if (mtr_state_id1.bits.OverTemp)
-        {
-            l_state_msg.data = "OverTemp bit is set.";
-            robot_state_l_pub->publish(l_state_msg);
-        }
-        if (mtr_state_id1.bits.OverLoad)
-        {
-            l_state_msg.data = "OverLoad bit is set.";
-            robot_state_l_pub->publish(l_state_msg);
-        }
-        if (mtr_state_id1.bits.HallFail)
-        {
-            l_state_msg.data = "HallFail bit is set.";
-            robot_state_l_pub->publish(l_state_msg);
-        }
-        if (mtr_state_id1.bits.InvVel)
-        {
-            l_state_msg.data = "InvVel bit is set.";
-            robot_state_l_pub->publish(l_state_msg);
-        }
-        if (mtr_state_id1.bits.Stall)
-        {
-            l_state_msg.data = "Stall bit is set.";
-            robot_state_l_pub->publish(l_state_msg);
-        }
-    }
-
-    if (mtr_state_id2.val != 0)
-    {
-        std_msgs::msg::String r_state_msg;
-        if (mtr_state_id2.bits.Alarm)
-        {
-            r_state_msg.data = "Alarm bit is set.";
-            robot_state_r_pub->publish(r_state_msg);
-        }
-        if (mtr_state_id2.bits.CtrlFail)
-        {
-             r_state_msg.data = "CtrlFail bit is set.";
-            robot_state_r_pub->publish(r_state_msg);
-        }
-        if (mtr_state_id2.bits.OverVolt)
-        {
-            r_state_msg.data = "OverVolt bit is set.";
-            robot_state_r_pub->publish(r_state_msg);
-        }
-        if (mtr_state_id2.bits.OverTemp)
-        {
-            r_state_msg.data = "OverTemp bit is set.";
-            robot_state_r_pub->publish(r_state_msg);
-        }
-        if (mtr_state_id2.bits.OverLoad)
-        {
-            r_state_msg.data = "OverLoad bit is set.";
-            robot_state_r_pub->publish(r_state_msg);
-        }
-        if (mtr_state_id2.bits.HallFail)
-        {
-            r_state_msg.data = "HallFail bit is set.";
-            robot_state_r_pub->publish(r_state_msg);
-        }
-        if (mtr_state_id2.bits.InvVel)
-        {
-            r_state_msg.data = "InvVel bit is set.";
-            robot_state_r_pub->publish(r_state_msg);
-        }
-        if (mtr_state_id2.bits.Stall)
-        {
-            r_state_msg.data = "Stall bit is set.";
-            robot_state_r_pub->publish(r_state_msg);
-        }
-    }
+    // if (mtr_state_id2.val != 0)
+    // {
+    //     auto robot_state_r_pub = node->create_publisher<std_msgs::msg::String>(
+    //     "/heroehs/labor/state/"+robotParamData.fb_state+"/r", qos_profile);
+    //     std_msgs::msg::String r_state_msg;
+    //     if (mtr_state_id2.bits.Alarm)
+    //     {
+    //         r_state_msg.data = "Alarm bit is set.";
+    //         robot_state_r_pub->publish(r_state_msg);
+    //     }
+    //     if (mtr_state_id2.bits.CtrlFail)
+    //     {
+    //          r_state_msg.data = "CtrlFail bit is set.";
+    //         robot_state_r_pub->publish(r_state_msg);
+    //     }
+    //     if (mtr_state_id2.bits.OverVolt)
+    //     {
+    //         r_state_msg.data = "OverVolt bit is set.";
+    //         robot_state_r_pub->publish(r_state_msg);
+    //     }
+    //     if (mtr_state_id2.bits.OverTemp)
+    //     {
+    //         r_state_msg.data = "OverTemp bit is set.";
+    //         robot_state_r_pub->publish(r_state_msg);
+    //     }
+    //     if (mtr_state_id2.bits.OverLoad)
+    //     {
+    //         r_state_msg.data = "OverLoad bit is set.";
+    //         robot_state_r_pub->publish(r_state_msg);
+    //     }
+    //     if (mtr_state_id2.bits.HallFail)
+    //     {
+    //         r_state_msg.data = "HallFail bit is set.";
+    //         robot_state_r_pub->publish(r_state_msg);
+    //     }
+    //     if (mtr_state_id2.bits.InvVel)
+    //     {
+    //         r_state_msg.data = "InvVel bit is set.";
+    //         robot_state_r_pub->publish(r_state_msg);
+    //     }
+    //     if (mtr_state_id2.bits.Stall)
+    //     {
+    //         r_state_msg.data = "Stall bit is set.";
+    //         robot_state_r_pub->publish(r_state_msg);
+    //     }
+    // }
     return;
 }
 
@@ -323,41 +321,41 @@ int main(int argc, char *argv[])
             resetAlarmCallBack(reset_alarm_msg, node);
         });
 
-    std::string topic_name = "/heroehs/labor/whl/"+robotParamData.fb_state+"/brake";
-    auto brake_sub = node->create_subscription<md_msgs::msg::Brake>(
+    std::string topic_name = "/heroehs/labor/whl/" + robotParamData.fb_state + "/brake";
+    auto brake_sub = node->create_subscription<std_msgs::msg::Float32MultiArray>(
         topic_name, 10,
-        [node](md_msgs::msg::Brake::SharedPtr msg)
+        [node](std_msgs::msg::Float32MultiArray::SharedPtr msg)
         {
             BrakeCallback(msg, node);
         });
 
-    std::string set_rpm_topic_name = "/heroehs/labor/whl/"+robotParamData.fb_state+"/set_rpm";
-    auto rpm_sub = node->create_subscription<md_msgs::msg::RPM>(
-        topic_name, 10,
-        [node](md_msgs::msg::RPM::SharedPtr msg)
+    // std::string set_rpm_topic_name = "/heroehs/labor/whl/"+robotParamData.fb_state+"/set_rpm";
+    auto rpm_sub = node->create_subscription<std_msgs::msg::Float32MultiArray>(
+        "/heroehs/labor/whl/" + robotParamData.fb_state + "/set_rpm", 10,
+        [node](std_msgs::msg::Float32MultiArray::SharedPtr msg)
         {
             SetRPMCallback(msg, node);
         });
 
-
     /**********************************************************************************************************/
     // std::string rpm_topic_name = "/heroehs/labor/whl/"+robotParamData.fb_state+"/rpm";
-    auto robot_rpm_pub = node->create_publisher<md_msgs::msg::RPM>("/heroehs/labor/whl/"+robotParamData.fb_state+"/rpm", qos_profile);
+    auto robot_rpm_pub = node->create_publisher<std_msgs::msg::Float32MultiArray>(
+        "/heroehs/labor/whl/" + robotParamData.fb_state + "/rpm", qos_profile);
 
     auto robot_ms_pub = node->create_publisher<std_msgs::msg::Float32MultiArray>(
-        "/heroehs/labor/motor_vel/"+robotParamData.fb_state, qos_profile);
+        "/heroehs/labor/whl/" + robotParamData.fb_state+"/ms", qos_profile);
 
-    auto robot_current_l_pub = node->create_publisher<std_msgs::msg::Float64>(
-        "/heroehs/labor/whl/"+robotParamData.fb_state+"l"+"/current", qos_profile);
+    auto robot_current_l_pub = node->create_publisher<std_msgs::msg::Float32>(
+        "/heroehs/labor/whl/" + robotParamData.fb_state + "l" + "/current", qos_profile);
 
-    auto robot_current_r_pub = node->create_publisher<std_msgs::msg::Float64>(
-        "/heroehs/labor/whl/"+robotParamData.fb_state+"r"+"/current", qos_profile);
+    auto robot_current_r_pub = node->create_publisher<std_msgs::msg::Float32>(
+        "/heroehs/labor/whl/" + robotParamData.fb_state + "r" + "/current", qos_profile);
 
     auto robot_state_l_pub = node->create_publisher<std_msgs::msg::String>(
-        "/heroehs/labor/state/"+robotParamData.fb_state+"/l", qos_profile);
+        "/heroehs/labor/state/" + robotParamData.fb_state + "/l", qos_profile);
 
     auto robot_state_b_pub = node->create_publisher<std_msgs::msg::String>(
-        "/heroehs/labor/state/"+robotParamData.fb_state+"/r", qos_profile);
+        "/heroehs/labor/state/" + robotParamData.fb_state + "/r", qos_profile);
 
     /**********************************************************************************************************/
 
@@ -454,10 +452,11 @@ Set RPM
 
 ***************************************************************************************/
 
-void SetRPMCallback(const md_msgs::msg::RPM::SharedPtr msg, rclcpp::Node::SharedPtr node)
+void SetRPMCallback(const std_msgs::msg::Float32MultiArray::SharedPtr msg, rclcpp::Node::SharedPtr node)
 {
-    L_RPM = msg->l_rpm;
-    R_RPM = msg->r_rpm;
+    L_RPM = msg->data[0];
+    R_RPM = msg->data[1];
+    velCmdUpdateCount++;
 }
 
 void SetRPM(rclcpp::Node::SharedPtr node)
@@ -465,9 +464,9 @@ void SetRPM(rclcpp::Node::SharedPtr node)
     velCmdUpdateCount = 0;
 
     PID_PNT_VEL_CMD_t pid_pnt_vel_cmd, *p;
-    int16_t *pGoalRPMSpeed;
+    // int16_t *pGoalRPMSpeed;
 
-    pGoalRPMSpeed = RobotSpeedToRPMSpeed(goal_cmd_speed, goal_cmd_ang_speed, node);
+    // pGoalRPMSpeed = RobotSpeedToRPMSpeed(goal_cmd_speed, goal_cmd_ang_speed, node);
     // RCLCPP_INFO(node->get_logger(), "Goal RPM L:%d, R:%d", pGoalRPMSpeed[0], pGoalRPMSpeed[1]);
 
     p = &pid_pnt_vel_cmd;
@@ -489,42 +488,42 @@ Call Back
 
 ***************************************************************************************/
 
-void BrakeCallback(const md_msgs::msg::Brake::SharedPtr msg, rclcpp::Node::SharedPtr node)
+void BrakeCallback(const std_msgs::msg::Float32MultiArray::SharedPtr msg, rclcpp::Node::SharedPtr node)
 {
     PID_PROP_BRAKE_DATA_t pid_prop_brake_data, *p;
 
     p = &pid_prop_brake_data;
 
-    if (msg->l_brake <= -1)
+    if (msg->data[0] <= -1)
     {
         p->l_brake_disable = 0;
         L_brake_data = -1;
     }
-    else if (msg->l_brake >= 0 && msg->l_brake <= 1000)
+    else if (msg->data[0] >= 0 && msg->data[0] <= 1000)
     {
         p->r_brake_disable = 1;
-        L_brake_data = msg->l_brake;
+        L_brake_data = msg->data[0];
         p->l_brake_data = L_brake_data;
     }
-    else if (msg->l_brake > 1000)
+    else if (msg->data[0] > 1000)
     {
         p->r_brake_disable = 1;
         L_brake_data = 1000;
         p->l_brake_data = L_brake_data;
     }
 
-    if (msg->r_brake <= -1)
+    if (msg->data[1] <= -1)
     {
         p->r_brake_disable = 0;
         R_brake_data = -1;
     }
-    else if (msg->r_brake >= 0 && msg->r_brake <= 1000)
+    else if (msg->data[1] >= 0 && msg->data[1] <= 1000)
     {
         p->r_brake_disable = 1;
-        R_brake_data = msg->r_brake;
+        R_brake_data = msg->data[1];
         p->r_brake_data = R_brake_data;
     }
-    else if (msg->r_brake > 1000)
+    else if (msg->data[1] > 1000)
     {
         p->r_brake_disable = 1;
         R_brake_data = 1000;
@@ -549,8 +548,10 @@ void VelCmdRcvTimeoutCallback(void)
 
     if (velCmdRcvCount == velCmdRcvCount)
     {
-        goal_cmd_speed = 0;
-        goal_cmd_ang_speed = 0;
+        // goal_cmd_speed = 0;
+        // goal_cmd_ang_speed = 0;
+        L_RPM = 0;
+        R_RPM = 0;
     }
 
     old_velCmdRcvCount = velCmdRcvCount;

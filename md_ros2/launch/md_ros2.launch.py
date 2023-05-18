@@ -81,6 +81,6 @@ def generate_launch_description():
 
 
     ld.add_action(node1)
-    ld.add_action(node2)
+    # ld.add_action(node2)  
 
     return ld
