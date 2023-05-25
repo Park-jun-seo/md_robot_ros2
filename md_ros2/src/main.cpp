@@ -49,10 +49,27 @@ void PubRobotPose(const md_msgs::msg::Pose &msg, rclcpp::Node::SharedPtr node)
 
 void PubRobotRPM(const md_msgs::msg::RPM &msg, rclcpp::Node::SharedPtr node)
 {
+    std_msgs::msg::Float32MultiArray ms_msg;
+
+    ms_msg.data.resize(2);
+
     rclcpp::QoS qos_profile = rclcpp::QoS(rclcpp::KeepLast(10));
     std::string topic_name = "/heroehs/labor/whl/"+robotParamData.fb_state+"/rpm";
     auto robot_rpm_pub = node->create_publisher<md_msgs::msg::RPM>(topic_name, qos_profile);
     robot_rpm_pub->publish(msg);
+
+    auto robot_ms_pub = node->create_publisher<std_msgs::msg::Float32MultiArray>(
+        "/heroehs/labor/whl/" + robotParamData.fb_state + "/ms", qos_profile);
+
+    static double temp = (2.0 * M_PI * robotParamData.wheel_radius) / 60;
+
+    // temp = (2.0 * M_PI * robotParamData.wheel_radius) / 60;
+
+    ms_msg.data[0] = temp * (double)msg.l_rpm;
+    ms_msg.data[1] = temp * (double)msg.r_rpm;
+
+    robot_ms_pub->publish(ms_msg);
+
     return;
 }
 
@@ -171,6 +188,8 @@ int main(int argc, char *argv[])
 
     std::string rpm_topic_name = "/heroehs/labor/whl/"+robotParamData.fb_state+"/rpm";
     auto robot_rpm_pub = node->create_publisher<md_msgs::msg::RPM>(rpm_topic_name, qos_profile);
+
+    auto robot_ms_pub = node->create_publisher<std_msgs::msg::Float32MultiArray>("/heroehs/labor/whl/" + robotParamData.fb_state + "/ms", qos_profile);
     /**********************************************************************************************************/
 
     rclcpp::WallRate r(std::chrono::milliseconds(1));

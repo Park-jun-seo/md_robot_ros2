@@ -23,6 +23,8 @@
 #include "md_msgs/msg/pose.hpp"
 #include "md_msgs/msg/rpm.hpp"
 
+#include "std_msgs/msg/float32_multi_array.hpp"
+
 // #define LIMIT(value, minValue, maxValue) ((value) < (minValue) ? (minValue) : ((value) > (maxValue) ? (maxValue) : (value)))
 #define constrain(amt, low, high) ((amt) <= (low) ? (low) : ((amt) >= (high) ? (high) : (amt)))
 
