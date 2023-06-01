@@ -192,7 +192,7 @@ int main(int argc, char *argv[])
     auto robot_ms_pub = node->create_publisher<std_msgs::msg::Float32MultiArray>("/heroehs/labor/whl/" + robotParamData.fb_state + "/ms", qos_profile);
     /**********************************************************************************************************/
 
-    rclcpp::WallRate r(std::chrono::milliseconds(1));
+    rclcpp::WallRate r(std::chrono::milliseconds(10));
 
     rclcpp::Time start_time = rclcpp::Clock().now();
     rclcpp::Duration start_delay = rclcpp::Duration::from_seconds(1.5);
