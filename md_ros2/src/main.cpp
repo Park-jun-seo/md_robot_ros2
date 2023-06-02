@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
     rclcpp::QoS qos_profile = rclcpp::QoS(rclcpp::KeepLast(10));
 
     auto keyboard_sub = node->create_subscription<geometry_msgs::msg::Twist>(
-        "cmd_vel", 10, cmdVelCallBack);
+        "/heroehs/labor/whl/cmd_vel", 10, cmdVelCallBack);
 
     auto reset_odom_sub = node->create_subscription<std_msgs::msg::Bool>(
         "reset_odom", 10,

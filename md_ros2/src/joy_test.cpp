@@ -14,7 +14,7 @@ public:
     joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
         "joy", 10, std::bind(&JoyToTwist::joy_callback, this, std::placeholders::_1));
 
-    twist_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
+    twist_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("/heroehs/labor/whl/cmd_vel", 10);
 
     // initialize linear x to zero and angular z to zero
     twist_.linear.x = 0.0;
