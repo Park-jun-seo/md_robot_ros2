@@ -20,6 +20,12 @@ uint8_t serial_comm_snd_buff[MAX_PACKET_SIZE];
 
 extern INIT_SETTING_STATE_t fgInitsetting;
 
+void SerialClose()
+{
+    port.close();
+    std::cout<<"serial close"<<std::endl;
+}
+
 // Initialize serial communication in ROS
 int InitSerialComm(rclcpp::Node::SharedPtr node)
 {
